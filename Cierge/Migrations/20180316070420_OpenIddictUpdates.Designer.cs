@@ -11,8 +11,8 @@ using System;
 namespace Cierge.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20180316064825_OpenIddict_Updates_20180316")]
-    partial class OpenIddict_Updates_20180316
+    [Migration("20180316070420_OpenIddictUpdates")]
+    partial class OpenIddictUpdates
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

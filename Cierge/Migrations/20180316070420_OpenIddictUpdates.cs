@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Cierge.Migrations
 {
-    public partial class OpenIddict_Updates_20180316 : Migration
+    public partial class OpenIddictUpdates : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
