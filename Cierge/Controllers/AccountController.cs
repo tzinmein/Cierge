@@ -15,6 +15,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Cierge.Controllers
 {
@@ -52,6 +53,12 @@ namespace Cierge.Controllers
 
 
         }
+
+        // This is used to sign the TOTP for registering users.
+        // If this value is changed (ie. server restarted), all
+        // registration TOTPs will be invalidated.
+        // TODO: maybe make this a more permamnent value for statelessness?
+        private string TemporarySecurityStamp = new Guid().ToString();
 
         [HttpGet]
         [AllowAnonymous]
@@ -100,7 +107,7 @@ namespace Cierge.Controllers
                     {
                         Id = email,
                         Email = email,
-                        SecurityStamp = ""
+                        SecurityStamp = TemporarySecurityStamp
                     };
 
                     attemptedOperation = AuthOperation.Registering;
@@ -164,7 +171,7 @@ namespace Cierge.Controllers
 
             // Add a space every 3 characters for readability
             token = String.Concat(token.SelectMany((c, i)
-                                            => (i+1) % 3 == 0 ? $"{c} " : $"{c}"));
+                                            => (i+1) % 3 == 0 ? $"{c} " : $"{c}")).Trim();
 
             var callbackUrl = Url.TokenInputLink(Request.Scheme,
                 new TokenInputViewModel
@@ -223,7 +230,7 @@ namespace Cierge.Controllers
             {
                 Id = email,
                 Email = email,
-                SecurityStamp = ""
+                SecurityStamp = TemporarySecurityStamp
             };
 
             var isTokenValid = false;
@@ -280,7 +287,7 @@ namespace Cierge.Controllers
                     {
                         RememberMe = model.RememberMe,
                         Email = email,
-                        UserName = email.Split('@')[0]?.ToLower(),
+                        UserName = GenerateUserName(email),
                         Token = token,
                         ReturnUrl = model.ReturnUrl
                     });
@@ -349,7 +356,6 @@ namespace Cierge.Controllers
             return RedirectToLocal(model.ReturnUrl);
         }
 
-
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -412,7 +418,7 @@ namespace Cierge.Controllers
                 return View(nameof(Register), new RegisterViewModel
                 {
                     Email = emailFromExternalLoginProvider,
-                    UserName = (nameFromExternalLoginProvider?.Replace(" ","_") ?? emailFromExternalLoginProvider.Split('@')[0]).ToLower(),
+                    UserName = GenerateUserName(nameFromExternalLoginProvider),
                     ExternalLoginProviderDisplayName = info.ProviderDisplayName,
                     ReturnUrl = returnUrl
                 });
@@ -469,9 +475,16 @@ namespace Cierge.Controllers
 
                         return RedirectToLocal(returnUrl);
                     }
+                    else
+                    {
+                        _notice.AddErrors(ModelState, updateResult);
+                    }
+                }
+                else
+                {
+                    _notice.AddErrors(ModelState, addLoginResult);
                 }
 
-                _notice.AddErrors(ModelState);
                 return View(nameof(Login));
             }
 
@@ -495,13 +508,15 @@ namespace Cierge.Controllers
                 UserName = model.UserName,
                 Email = email,
                 DateCreated = DateTimeOffset.UtcNow,
-                SecurityStamp = "",
+                SecurityStamp = TemporarySecurityStamp,
 
                 FullName = model.FullName,
-                FavColor = model.FavColor,
+                FavColor = model.FavColor, // !! ADDING FIELDS: If you want users to input field on register
             };
 
             userEmpty.Email = email;
+
+            //userEmpty.FavColor = "Red"; // !! ADDING FIELDS: If you want to set default value for all registering users
 
             if (info == null) // User trying to register locally
             {
@@ -528,12 +543,11 @@ namespace Cierge.Controllers
             {
                 userEmpty.EmailConfirmed = false;
             }
-            var createResult = await _userManager.CreateAsync(userEmpty);            
 
+            var createResult = await _userManager.CreateAsync(userEmpty);
             if (createResult.Succeeded)
             {
                 var addLoginResult = await _userManager.AddLoginAsync(userEmpty, info);
-
                 if (addLoginResult.Succeeded)
                 {
                     var user = await _userManager.FindByNameAsync(model.UserName); // This works because usernames are unique
@@ -553,17 +567,18 @@ namespace Cierge.Controllers
                     await _signInManager.SignInAsync(user, isPersistent: model.RememberMe);
                     return RedirectToLocal(model.ReturnUrl); // Success
                 }
+                else
+                {
+                    _notice.AddErrors(ModelState, addLoginResult);
+                }
             }
             else
             {
-                _notice.AddErrors(ModelState);
-                return View(nameof(Register), model);
+                _notice.AddErrors(ModelState, createResult);
             }
 
 
-            await _userManager.DeleteAsync(userEmpty);
-
-            _notice.AddErrors(ModelState);
+            await _userManager.DeleteAsync(userEmpty); // TODO: make atomic
             return View(nameof(Register), model);
         }
 
@@ -613,6 +628,13 @@ namespace Cierge.Controllers
 
             var userLoginCount = _context.UserLogins.Count(l => l.UserId == user.Id);
             return userLoginCount >= MaxLoginsAllowed;
+        }
+
+        private string GenerateUserName(string name)
+        {
+            name = name.Split("@")[0] ?? "";
+            Regex rgx = new Regex("[^a-zA-Z0-9_-]");
+            return rgx.Replace(name, "").ToLower();
         }
 
         #endregion

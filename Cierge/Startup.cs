@@ -17,6 +17,8 @@ using System.IO;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Rewrite;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Cierge
 {
@@ -26,10 +28,12 @@ namespace Cierge
         {
             Configuration = configuration;
             Env = env;
+            SigningKey = new RsaSecurityKey(GetRsaSigningKey());
         }
 
         public IConfiguration Configuration { get; }
         public IHostingEnvironment Env { get; }
+        public SecurityKey SigningKey { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -62,6 +66,7 @@ namespace Cierge
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
+            
 
             if (!String.IsNullOrWhiteSpace(Configuration["ExternalAuth:Google:ClientId"]))
             {
@@ -89,6 +94,8 @@ namespace Cierge
                        .EnableUserinfoEndpoint("/api/userinfo");
                 options.AllowImplicitFlow();
 
+                options.SetAccessTokenLifetime(new TimeSpan(1, 0, 0));
+
                 // Might need to manually set issuer if running behind reverse proxy
                 var issuer = Configuration["Cierge:Issuer"];
                 if (!String.IsNullOrWhiteSpace(issuer))
@@ -97,23 +104,21 @@ namespace Cierge
                 if (!requireHttps)
                     options.DisableHttpsRequirement();
 
-                if (!Env.IsDevelopment())
-                {
+                if (Env.IsDevelopment())
                     options.AddEphemeralSigningKey();
-                }
                 else
-                {
-                    options.AddSigningKey(new RsaSecurityKey(GetRsaSigningKey()));
-                }
+                    options.AddSigningKey(SigningKey);
+
                 options.UseJsonWebTokens();
             });
 
-            services.AddAuthentication(options =>
+            services.AddCors(options =>
             {
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder => builder.WithOrigins("http://localhost:8000")
+                                .AllowAnyMethod()
+                                .AllowAnyHeader());
             });
-
-            //services.AddCors();
 
             if (Env.IsDevelopment())
             {
@@ -132,6 +137,34 @@ namespace Cierge
             services.AddScoped<NoticeService>();
 
             services.AddScoped<EventsService>();
+
+            // Allow JWT bearer authentication (for API calls)
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+            JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = false, // TODO: make configurable
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = SigningKey
+                    };
+
+                    options.Audience = Configuration["Cierge:Audience"];
+
+                    if (Env.IsDevelopment())
+                        options.RequireHttpsMetadata = false;
+                });
+
+            // Allow cross-site cookies 
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.SameSite = SameSiteMode.None;
+            });
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -147,9 +180,7 @@ namespace Cierge
                 app.UseExceptionHandler("/Home/Error");
             }
 
-            // Does not work?
-            var options = new RewriteOptions()
-                .AddRedirectToHttps();
+            app.UseCors("AllowSpecificOrigin");
 
             app.UseStaticFiles();
 

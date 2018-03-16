@@ -10,46 +10,52 @@ Instead of storing passwords, Cirege uses <b>magic links/codes and external logi
 
 </p>
 
-<a  href="https://cierge.azurewebsites.net" target="_blank"><h3><b>🔑Try out a demo</b></h3></a>
+<a href="https://cierge.azurewebsites.net" target="_blank"><h3><b>🔑Try out a demo</b></h3></a>
 
-<a  href="http://cierge.biarity.me" target="_blank"><h4>🌐Homepage</h4></a>
+<a href="http://cierge.biarity.me" target="_blank"><h4>🌐Homepage</h4></a>
+
+<a href="https://biarity.gitlab.io/2018/02/23/passwordless" target="_blank"><h5>❓Why passwordless</h4></a>
+
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&logo=twitter)](https://twitter.com/Biarity)
 
 ---
 
 ## Why Cierge 🗝️
 
-**😊Tried & tested - Passwordless is the future.**
+### Tried & tested - Passwordless is the future
 
 Passwords are [insecure](https://www.entrepreneur.com/article/246902)
-[by](https://www.wired.com/2012/11/ff-mat-honan-password-hacker/)
-[default](https://blog.codinghorror.com/password-rules-are-bullshit/). 
-Large platforms such as Slack, Medium, Twitter, Yahoo, & Whatsapp are now going passwordless (Slack & Medium using it exclusively).
+ [by](https://www.wired.com/2012/11/ff-mat-honan-password-hacker/) [default](https://blog.codinghorror.com/password-rules-are-bullshit/). Cierge does away by the illusion of security passwords give ("forgot password" usually relies upon email-based auth at the end of the day).
 
-**😊No passwords to hash, no passwords to store.**
+### No passwords to hash, salt, store, protect, or worry about
 
 Even if your database is compromised, your users won't be.
 
-**😊Users won't have to come up with their 278th password.**
+### Users won't have to come up with their 278th password
 
 Lack of complex password rules means convenience for both you and your users. User won't have to come up with and remember yet another password, and you won't have to worry about password reuse.
 
-**😊User management**
+### User management
 
 Users can edit their profiles and add or remove emails or external logins while an admin manages it all from the admin panel.
 
-**😊External logins out of the box**
+### External logins out of the box
 
 Instead of logging in using email, users can use social logins such as Google, Facebook, Github, etc. Users can also associate multiple logins for one account. External logins are very easy to setup, for example, to add Google logins simply paste your site key & secret into the configuration and Cierge does the rest!
 
-**😌Fully Stateless**
+### Fully Stateless
 
 Cierge does not store the magic codes in a database. You can generate a code, turn Cierge off & delete all databases, then turn it back on and your token would still be valid if you made it before expiry.
 
-**😌Invisible reCAPTCHA**
+### Use as an SSO
 
-Cierge utilizes invisible reCAPTCHA to ensure magic codes (which expire quickly) are not brute-forceable. The reCAPTCHA only appears after multiple wrong attempts at a 6-digit code.
+Since Cierge doesn't care about the rest of your tech stack, you can use the same Cierge server for multiple apps & share users. As a matter of fact, you can use the demo Cierge server for your own apps just fine!
 
-**😌No profile existence leakage. Actually, no leakage of any kind.**
+### Invisible reCAPTCHA
+
+Cierge utilizes invisible reCAPTCHA to ensure magic codes (which expire quickly) are not brute-forceable. The reCAPTCHA only appears after multiple wrong attempts at a 6-digit code. You can make this code longer or disable magic codes and use magic links exclusively if you want.
+
+### No profile existence leakage. Actually, no leakage of any kind.
 
 With traditional password systems, a malicious user can try to register with an email to find out if it exists. With Cierge, 0 data is leaked about users or if they exist - until authenticated. This comes naturally since Cierge makes little distinction between registration and login.
 
@@ -65,9 +71,9 @@ That's also a problem with traditional password logins. An attacker can click "f
 
 Cierge sends a magic link as well as a magic code that a user can manually enter into the login screen to continue as an alternative to clicking the link. Magic codes are short, volatile, & memorable (eg. 443 863). For example, you can look up the code on your phone then enter it into your browser on desktop. Note that Cierge also allows external social logins so users can skip emails altogether.
 
-**😫I don't find this convenient enough! And what about grey listing!**
+**😫I don't find this convenient enough!**
 
-Cierge supports external social logins (eg. Google, Facebook, Twitter, Github, etc.) in addition to email login. Users can use any number of login methods at the same time. Also remember that Cierge is, if anything, more convenient than the now-popular 2FA.
+Cierge supports external social logins (eg. Google, Facebook, Twitter, Github, etc.) in addition to email login. Users can use any number of login methods at the same time. Also remember that Cierge is, if anything, more convenient than the now-popular 2FA. 
 
 **🤔How does Cierge handle changing emails?**
 
@@ -75,7 +81,19 @@ Cierge does not have a "change email" feature. Instead, users can "add" or "remo
 
 **🤔What about breach detection?**
 
-With traditional password logins, a user would notice if their password has been changed. With Cierge, a user would notice if an attacker removed their email from thier logins. In addition, Cierge exposes an easily-accessible read-only event log of everything that has happened to an account (with associated IP addresses & user agents) to aid in breach detection, accessible to account owners and admins.
+With traditional password logins, a user would notice if their password has been changed. With Cierge, a user would notice if an attacker removed their email from their logins. In addition, Cierge exposes an easily-accessible read-only event log of everything that has happened to an account (with associated IP addresses & user agents) to aid in breach detection, accessible to account owners and admins.
+
+**🤔What measures are in place to prevent an attacker from fully compromising an account?**
+
+Cierge's next version will implement security lock periods for removing logins - for example: "an email login that has existed for at least 60 days will require at least 30 days to be removed, otherwise, it can be removed instantly". This will prevent an attacker from removing the user's email (and locking them out) whilst also preventing them from adding their own email. In addition, notification emails will be sent to the user whenever account settings have been changed.
+
+**🤔What about email greylisting?**
+
+Greylisting also affects passwordful systems. User emails *should always be verified* before allowing the user to do anything of significance. Cierge also supports external logins so using email is not a necessity.
+
+**🤔Why does Cierge handle profile metadata?**
+
+This allows Cierge to collect any must-have profile information from users when they register. You can easily define new fields for storage, but you'll have to work with Cierge's source.
 
 ---
 
@@ -93,7 +111,7 @@ Guides:
 There is also a [sample Dockerfile](/Dockerfile). 
 For a more complete example on how you'd use Cierge in a multicontianer docker project, check out [Docker Starter](https://github.com/Biarity/DockerStarter).
 
-It is recommended that you run Cierge behind a reverse proxy that requires https and implements some form of [rate limiting](https://blog.codinghorror.com/rate-limiting-and-velocity-checking/)	.
+It is recommended that you run Cierge behind a reverse proxy that requires https and implements some form of [rate limiting](https://blog.codinghorror.com/rate-limiting-and-velocity-checking/).
 
 ---
 
@@ -110,12 +128,13 @@ For more information on how Cierge reads configuration, check out the [ASP.NET C
 
 Here's a walkthrough of the configuration required by Cierge:
 
-(`Recaptcha, `Smtp`, & `Cierge:Audience` are the only required ones)
+(`ConnectionStrings:DefaultConnection`, `Recaptcha`, `Smtp`, & `Cierge:Audience` are the only required ones)
 ```
 {
   "ConnectionStrings": {
     "DefaultConnection": `string: a PostgreSQL connection string.
-	                      Using a different database provider: https://docs.microsoft.com/en-us/ef/core/providers/` 
+	                 [Using a different database provider](https://docs.microsoft.com/en-us/ef/core/providers/).
+			 Don't forget to apply database migrations [`dotnet ef database update`](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/).`
   },
   "Recaptcha": {
     "Secret": `string: reCAPTCHA secret, required`,
@@ -133,15 +152,16 @@ Here's a walkthrough of the configuration required by Cierge:
     "Password": `string`,
     "Ssl": `boolean: highly recommended`,
     "Port": `number`,
-    "From": `string`
+    "From": `string`,
+    "RandomizeFrom": `boolean: allow addition of random characters before the @ symbol - see issue #18`
   },
   "Cierge": {
-    "RsaSigningKeyJsonPath": `string: OIDC RSA signing key, optional, leave empty to generate`,
+    "RsaSigningKeyJsonPath": `string: OIDC RSA signing json key path (see RsaKeyGenerator), optional, leave empty to generate`,
     "Issuer": `string: OIDC issuer, optional, useful if running behind reverse proxy`,
     "RequireHttps": `boolean: leave off if running behind reverse proxy`,
     "AppName": `string: name of your main website, cosmetic`,
     "AppUrl": `string: url of your main website, cosmetic`,
-    "Audience": `string: "aud" claim in tokens",
+    "Audience": `string: "aud" claim in tokens, required",
     "BeNice": `boolean: display "Powered by Cierge"`,
     "Events": {
       "MaxStored": `number: maximum number of events stored (default 50)`,
@@ -165,16 +185,45 @@ You can easily reconfigure OpenIddict by editing [/Cierge/Startup.cs](/Cierge/St
 
 ---
 
+## More 📔
+
+### Adding a new profile field/claim
+
+In the demo, you can see a "Favourite Color" user property, demonstrating how you'd implement additional user metadata fields.
+To add a new field, search for the text `FavColor` in Ceirge's source. Add analogous code for your custom field. 
+You will find comments starting with `!! ADDING FIELD:` that explain why a certain line of code might exist.
+Do not edit migration code (you won't find a comment there).
+Don't forget to [add a migration & apply it](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/) once you're done, to update the database.
+
+### Supporting more external login providers
+
+Check out the [ASP.NET Core external authentication guide](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/social/)
+
+### Cierge vs Portier vs PwdLess
+
+* Unlike PwdLess & Portier, Cierge handles user management, a variety of external logins, and a frontend (more like an SSO).
+* Portier is an email-based authentication server that *only* handles authentication (ie. no user management). 
+Cierge might progressively implement parts of the Portier spec as it develops for standradization.
+* PwdLess is an API-only passwordless authentication server that does not implement OIDC, as such it is easier to pick up
+
+### Get your Cierge project featured
+
+Feel free to email `admin at biarity dot me` if you made a project that uses Cierge for authenitcation and want to get it listed here.
+
+---
+
 ## Recommended Email Providers 📧
 
-It is recommended that you use a well-known email provider to enhance deilverability. Here are some free ones:
+It is recommended that you use a well-known email provider to enhance deliverability. Here are some free ones:
 
 * [MailJet](https://mailjet.com) (free 6k emails/month)
 * [Mailgun](https://mailgun.com) (free 10k emails/month)
 * [Sendgrid](https://sendgrid.com) (free 40k emails/month)
-* [Elastic Mail](https://elasticmail.com) (free 150k emails/month)
+* [Elastic Email](https://elasticemail.com) (free 150k emails/month)
 
-## Development & Contributing 💻
+## Follow development 💻
 
-You can follow Cierge development at [our GitHub project board](https://github.com/PwdLess/Cierge/projects/3). 
-Any contributions highly appreciated!
+You can follow Cierge development at [our GitHub project board](https://github.com/PwdLess/Cierge/projects/3). Or on [twitter](https://twitter.com/Biarity).
+
+## License & Contributing 📝
+Cierge is licensed under Apache 2.0. Cierge uses OpenIddict for OpenID Connect functionality, which is also licensed under Apache 2.0. Any contributions highly appreciated!

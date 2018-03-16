@@ -29,6 +29,7 @@
             <div asp-validation-summary="All" class="text-danger"></div>
 
             <input asp-for="Logins" type="hidden" value="@Model.Logins" /> <!-- Doesn't actually send a list. You have to recompute. -->
+            <input asp-for="EmailConfirmed" type="hidden" value="@Model.EmailConfirmed" />
 
             <label asp-for="UserName"></label>
             <input asp-for="UserName" />
@@ -64,7 +65,7 @@
             <label asp-for="FullName"></label>
             <input asp-for="FullName" />
 
-            <label asp-for="FavColor"></label>
+            <label asp-for="FavColor"></label> <!-- !! ADDING FIELDS: If you want users to be able to edit field -->
             <input asp-for="FavColor" />
 
             <button type="submit" class="button">
